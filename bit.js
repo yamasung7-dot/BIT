@@ -3,10 +3,40 @@ Plugin.register('bit', {
     author: 'yamasung7-dot',
     description: 'Utilities for cleaning unnecessary mesh geometry.',
     icon: 'dangerous',
-    version: '0.5.1',
+    version: '0.6.0',
     variant: 'both',
 
     onload() {
+        function getMeshStats() {
+            let vertices = 0;
+            let faces = 0;
+            let meshes = 0;
+
+            if (typeof Outliner !== 'undefined' && Outliner.elements) {
+                Outliner.elements.forEach(element => {
+                    if (element.mesh) {
+                        meshes++;
+                        vertices += element.mesh.vertices ? Object.keys(element.mesh.vertices).length : 0;
+                        faces += element.mesh.faces ? Object.keys(element.mesh.faces).length : 0;
+                    }
+                });
+            }
+
+            return {meshes, vertices, faces};
+        }
+
+        function showFitbitReport() {
+            const stats = getMeshStats();
+            Blockbench.showMessageBox({
+                title: 'BIT Fitbit Report',
+                message:
+                    'Meshes: ' + stats.meshes + '\n' +
+                    'Vertices: ' + stats.vertices + '\n' +
+                    'Faces: ' + stats.faces + '\n\n' +
+                    'Duplicate detection and topology cleanup will be added next.'
+            });
+        }
+
         const bitTools = {
             optimize: new Action('bit_optimize_mesh', {
                 name: 'BIT Upgrade',
@@ -25,10 +55,7 @@ Plugin.register('bit', {
                 description: 'Analyze mesh topology and report possible waste.',
                 icon: 'analytics',
                 click() {
-                    Blockbench.showMessageBox({
-                        title: 'BIT Fitbit Report',
-                        message: 'Topology analysis foundation active. Vertex scanning will be added next.'
-                    });
+                    showFitbitReport();
                 }
             }),
 
@@ -45,7 +72,6 @@ Plugin.register('bit', {
             })
         };
 
-        // Toolbox integration when available, fallback keeps compatibility.
         if (typeof Toolbox !== 'undefined' && Toolbox.addAction) {
             Toolbox.addAction(bitTools.optimize);
             Toolbox.addAction(bitTools.fitbit);
