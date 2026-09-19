@@ -3,73 +3,43 @@ Plugin.register('bit', {
     author: 'yamasung7-dot',
     description: 'Utilities for cleaning unnecessary mesh geometry.',
     icon: 'dangerous',
-    version: '0.6.0',
+    version: '0.7.0',
     variant: 'both',
 
     onload() {
-        function getMeshStats() {
-            let vertices = 0;
-            let faces = 0;
-            let meshes = 0;
+        function analyzeTopology() {
+            let report = {meshes:0, vertices:0, faces:0, duplicates:0};
+            let positions = {};
 
             if (typeof Outliner !== 'undefined' && Outliner.elements) {
                 Outliner.elements.forEach(element => {
-                    if (element.mesh) {
-                        meshes++;
-                        vertices += element.mesh.vertices ? Object.keys(element.mesh.vertices).length : 0;
-                        faces += element.mesh.faces ? Object.keys(element.mesh.faces).length : 0;
-                    }
+                    if (!element.mesh) return;
+                    report.meshes++;
+                    let verts = element.mesh.vertices || {};
+                    report.vertices += Object.keys(verts).length;
+                    report.faces += element.mesh.faces ? Object.keys(element.mesh.faces).length : 0;
+                    Object.values(verts).forEach(v => {
+                        let key = v.join ? v.join(',') : JSON.stringify(v);
+                        if (positions[key]) report.duplicates++;
+                        positions[key] = true;
+                    });
                 });
             }
-
-            return {meshes, vertices, faces};
-        }
-
-        function showFitbitReport() {
-            const stats = getMeshStats();
-            Blockbench.showMessageBox({
-                title: 'BIT Fitbit Report',
-                message:
-                    'Meshes: ' + stats.meshes + '\n' +
-                    'Vertices: ' + stats.vertices + '\n' +
-                    'Faces: ' + stats.faces + '\n\n' +
-                    'Duplicate detection and topology cleanup will be added next.'
-            });
+            return report;
         }
 
         const bitTools = {
-            optimize: new Action('bit_optimize_mesh', {
-                name: 'BIT Upgrade',
-                description: 'Safely optimize unnecessary topology.',
-                icon: 'upgrade',
-                click() {
-                    Blockbench.showMessageBox({
-                        title: 'BIT Upgrade',
-                        message: 'Optimization preview system ready. No changes applied.'
-                    });
-                }
-            }),
-
-            fitbit: new Action('bit_fitbit', {
-                name: 'BIT Fitbit',
-                description: 'Analyze mesh topology and report possible waste.',
-                icon: 'analytics',
-                click() {
-                    showFitbitReport();
-                }
-            }),
-
-            hive: new Action('bit_hive', {
-                name: 'BIT Hive',
-                description: 'Detect complex topology problems.',
-                icon: 'account_tree',
-                click() {
-                    Blockbench.showMessageBox({
-                        title: 'BIT Hive',
-                        message: 'Advanced topology analysis foundation active.'
-                    });
-                }
-            })
+            optimize: new Action('bit_optimize_mesh', {name:'BIT Upgrade', icon:'upgrade', click(){
+                Blockbench.showMessageBox({title:'BIT Upgrade', message:'Preview mode only. No changes applied.'});
+            }}),
+            fitbit: new Action('bit_fitbit', {name:'BIT Fitbit', icon:'analytics', click(){
+                let r = analyzeTopology();
+                Blockbench.showMessageBox({title:'BIT Fitbit Report', message:
+                    'Meshes: '+r.meshes+'\nVertices: '+r.vertices+'\nFaces: '+r.faces+'\nDuplicate vertices: '+r.duplicates});
+            }}),
+            hive: new Action('bit_hive', {name:'BIT Hive', icon:'account_tree', click(){
+                Blockbench.showMessageBox({title:'BIT Hive', message:'Topology analysis foundation active.'});
+            }})
         };
 
         if (typeof Toolbox !== 'undefined' && Toolbox.addAction) {
@@ -81,7 +51,6 @@ Plugin.register('bit', {
             MenuBar.addAction(bitTools.fitbit, 'tools');
             MenuBar.addAction(bitTools.hive, 'tools');
         }
-
         globalThis.BIT = bitTools;
     },
 
