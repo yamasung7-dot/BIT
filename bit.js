@@ -3,7 +3,7 @@ Plugin.register('bit', {
     author: 'yamasung7-dot',
     description: 'Utilities for cleaning unnecessary mesh geometry.',
     icon: 'dangerous',
-    version: '0.5.0',
+    version: '0.5.1',
     variant: 'both',
 
     onload() {
@@ -46,7 +46,7 @@ Plugin.register('bit', {
         };
 
         // Toolbox integration when available, fallback keeps compatibility.
-        if (Toolbox && Toolbox.addAction) {
+        if (typeof Toolbox !== 'undefined' && Toolbox.addAction) {
             Toolbox.addAction(bitTools.optimize);
             Toolbox.addAction(bitTools.fitbit);
             Toolbox.addAction(bitTools.hive);
